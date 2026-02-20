@@ -1,5 +1,18 @@
 # 🌤️ Chatbot Telegram --- Consulta de Clima com IA (n8n + OpenWeather + Gemini)
 
+```{=html}
+<p align="center">
+```
+`<img src="https://img.shields.io/badge/n8n-Automation-orange?style=for-the-badge"/>`{=html}
+`<img src="https://img.shields.io/badge/Telegram-Bot-blue?style=for-the-badge"/>`{=html}
+`<img src="https://img.shields.io/badge/OpenWeather-API-yellow?style=for-the-badge"/>`{=html}
+`<img src="https://img.shields.io/badge/Google-Gemini_AI-green?style=for-the-badge"/>`{=html}
+`<img src="https://img.shields.io/badge/status-SaaS_Level-success?style=for-the-badge"/>`{=html}
+```{=html}
+</p>
+```
+
+
 Este projeto implementa um **Chatbot inteligente de clima no Telegram**,
 desenvolvido no **n8n**, que consulta a **OpenWeather API** e utiliza
 **Google Gemini AI** para gerar respostas educadas, amigáveis e com
@@ -14,6 +27,25 @@ Exemplo:
 Atibaia,SP
 
 ------------------------------------------------------------------------
+
+``` mermaid
+flowchart LR
+
+Telegram --> Trigger
+Trigger --> Variaveis
+Variaveis --> ExtraiDados
+
+ExtraiDados --> IFValido
+
+IFValido -->|OK| OpenWeather
+IFValido -->|Erro| MsgErro
+
+OpenWeather --> Gemini
+Gemini --> Formatter
+
+Formatter --> TelegramOut
+MsgErro --> TelegramOut
+```
 
 ## 📌 Funcionalidades
 
