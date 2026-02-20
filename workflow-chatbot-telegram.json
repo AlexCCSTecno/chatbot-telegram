@@ -1,0 +1,480 @@
+{
+  "name": "Avaliacao1",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -832,
+        -32
+      ],
+      "id": "b2b4f620-0e74-4f33-934f-ad18871a8daa",
+      "name": "TelegramInTxt",
+      "webhookId": "4348e9ea-cc18-4025-9e1c-52d9470078f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "M4pwKXce4LJYlz3E",
+          "name": "Telegram Bot Clima"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Exemplo: entrada vinda de outro node\n// Altere conforme sua necessidade\nconst input = $('TelegramInTxt').first().json.message.text; \n// ex: \"bom jesus dos perdões, SP\"\n\nfunction removerAcentos(texto) {\n  return texto\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '');\n}\n\nlet resultado = {\n  valido: false,\n  cidade: null,\n  uf: null,\n  original: input\n};\n\nif (input && input.includes(',')) {\n  const partes = input.split(',');\n\n  if (partes.length === 2) {\n    let cidade = partes[0].trim();\n    let uf = partes[1].trim();\n\n    // UF deve ter exatamente 2 letras\n    if (/^[a-zA-Z]{2}$/.test(uf)) {\n      cidade = removerAcentos(cidade).toUpperCase();\n      uf = uf.toUpperCase();\n\n      resultado = {\n        valido: true,\n        cidade: cidade,\n        uf,\n        original: input\n      };\n    }\n  }\n}\n\nreturn resultado;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        -32
+      ],
+      "id": "9de995ac-ea5d-49d8-b969-4cae5939f082",
+      "name": "Extrai Dados"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TelegramInTxt').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        -288
+      ],
+      "id": "47ac2c1f-34c6-43c0-a187-037da8624c0d",
+      "name": "Mensagem Sucesso",
+      "webhookId": "d6592737-c22b-48e9-988e-0d955db5ecf4",
+      "credentials": {
+        "telegramApi": {
+          "id": "M4pwKXce4LJYlz3E",
+          "name": "Telegram Bot Clima"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3091f47b-4df5-4ae6-902c-71769ab52876",
+              "name": "pais",
+              "value": "BR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -608,
+        -32
+      ],
+      "id": "5b99d9ff-6174-4cd1-9812-d4fb464c8090",
+      "name": "VariaveisGlobais"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('TelegramInTxt').item.json.message.chat.id }}",
+        "text": "={{ $json.error_message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        144
+      ],
+      "id": "59dd18c4-0505-47ec-9839-b4ed5b07bf65",
+      "name": "Mensagem de Falha",
+      "webhookId": "32df8538-a54a-4d23-b3d9-aa0d633ef8c3",
+      "credentials": {
+        "telegramApi": {
+          "id": "M4pwKXce4LJYlz3E",
+          "name": "Telegram Bot Clima"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1acdc58a-5c30-48b2-a62b-dafcfdb143dc",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        -32
+      ],
+      "id": "a6b34751-209a-423a-8572-8358a58395a6",
+      "name": "dados extraidos?"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=q",
+              "value": "={{ $json.cidade }},{{ $json.uf }},{{ $('VariaveisGlobais').item.json.pais }}"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        64,
+        -128
+      ],
+      "id": "6619affc-5cc6-4e5b-b3b3-d3ac46e5de56",
+      "name": "pesquisa temperatura",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HRvH5UWYxIov8xrP",
+          "name": "openweathermap_api_key"
+        },
+        "httpCustomAuth": {
+          "id": "ROUGPfldOLIMDfFd",
+          "name": "openweathermap_key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -160
+      ],
+      "id": "8830986a-926c-4dbd-ab91-61c0618e0d01",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7OSctZhZWZImXoao",
+          "name": "GeminiApiFTR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4b188dc-5073-49ad-8092-58e9cd06b19d",
+              "name": "error_message",
+              "value": "=❌ Cidade \"{{ $json.original }}\" não encontrada. Use o formato Cidade,UF (ex.: São Paulo,SP).",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        240
+      ],
+      "id": "592be409-aabb-48d8-b1d8-9814d1c5b15e",
+      "name": "setErrorMessage"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Cidade: {{ $('dados extraidos?').item.json.original }}. Temperatura: {{ $json.main.temp.round() }} Graus.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Você é um agente criação de mensagem. Sua única tarefa é informar a temperatura da cidade de uma forma educada e com uma pitadinha de humor. Sempre utilize emojis pra mensagem ficar mais bonita.\nA resposta sempre deve ser em primeira pessoa.\n#Entrada Esperada#\nCidade: Bom Jesus dos Perdões, SP. Temperatura: 31 Graus.\nCidade: Atibaia, SP. Temperatura: 19 Graus.\n\n#Opções de saída, mas você pode ser criativo na resposta#\nA temperatura agora é 31 graus, bom pra pegar uma prainha.\nA temperatura agora é 19 graus, não esquece o casaco."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.8,
+      "position": [
+        288,
+        -384
+      ],
+      "id": "ab26991a-b7a6-490b-9593-a8c7f8d58495",
+      "name": "Formata Msg Retorno",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8577532-3c24-4b81-a1e3-1f6c35407293",
+              "name": "text",
+              "value": "=🌤️ A temperatura em {{ $('dados extraidos?').item.json.original.split(',')[0] }} é de {{ $json.main.temp.round() }}°C",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -208
+      ],
+      "id": "37eaefa1-81ed-46e4-a6c7-fa3e7b97b61c",
+      "name": "setMessageError"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6ad5d964-0af0-4fa6-8e8c-da525fdd18fc",
+              "name": "error_message",
+              "value": "=❌ Cidade \"{{ $json.original }}\" não encontrada. Use o formato Cidade,UF (ex.: São Paulo,SP).",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        48
+      ],
+      "id": "f5090ff5-28f0-444a-891d-b5d1e5fb0944",
+      "name": "setMessageError1"
+    }
+  ],
+  "pinData": {
+    "TelegramInTxt": [
+      {
+        "json": {
+          "update_id": 138450165,
+          "message": {
+            "message_id": 2,
+            "from": {
+              "id": 8577592303,
+              "is_bot": false,
+              "first_name": "Alex",
+              "last_name": "Silva",
+              "language_code": "pt-br"
+            },
+            "chat": {
+              "id": 8577592303,
+              "first_name": "Alex",
+              "last_name": "Silva",
+              "type": "private"
+            },
+            "date": 1768871640,
+            "text": "atibaia, SP"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "TelegramInTxt": {
+      "main": [
+        [
+          {
+            "node": "VariaveisGlobais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrai Dados": {
+      "main": [
+        [
+          {
+            "node": "dados extraidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Sucesso": {
+      "main": [
+        []
+      ]
+    },
+    "VariaveisGlobais": {
+      "main": [
+        [
+          {
+            "node": "Extrai Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dados extraidos?": {
+      "main": [
+        [
+          {
+            "node": "pesquisa temperatura",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "setErrorMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Formata Msg Retorno",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pesquisa temperatura": {
+      "main": [
+        [
+          {
+            "node": "Formata Msg Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "setMessageError1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setErrorMessage": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de Falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Msg Retorno": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "setMessageError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setMessageError": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setMessageError1": {
+      "main": [
+        [
+          {
+            "node": "Mensagem de Falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "e582daa3-a62b-45a3-9795-b1db05cc52af",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a5443ea9081d4d1030ecc7c6630cbb536b40e8359368d9011f2ed95c6db5d6c"
+  },
+  "id": "LQNWgLKBaRrsOJv9",
+  "tags": []
+}
